@@ -1,0 +1,6 @@
+{
+  "name": "Iuran Warga Hijriah",
+  "description": "Aplikasi pencatatan penagihan iuran bulanan warga berbasis kalender Hijriyah dengan data warga, laporan, export Excel, dan statistik otomatis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
