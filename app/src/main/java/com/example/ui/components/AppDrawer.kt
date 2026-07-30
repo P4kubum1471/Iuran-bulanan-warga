@@ -34,6 +34,7 @@ sealed class DrawerDestination(val route: String, val title: String, val icon: I
 @Composable
 fun AppDrawerContent(
     currentRoute: String,
+    kelurahanName: String,
     onSelectDestination: (DrawerDestination) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -73,9 +74,10 @@ fun AppDrawerContent(
                         )
                     )
                     Text(
-                        text = "Pencatatan Penagihan Bulanan",
+                        text = kelurahanName,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = SecondaryTeal
+                            color = SecondaryTeal,
+                            fontWeight = FontWeight.Bold
                         )
                     )
                 }

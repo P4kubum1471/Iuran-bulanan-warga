@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.HijriMonth
 import com.example.ui.components.AppDrawerContent
 import com.example.ui.components.AppTopBar
@@ -41,6 +42,10 @@ fun MainAppScreen(viewModel: MainViewModel) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
 
+    val selectedYear by viewModel.selectedYear.collectAsStateWithLifecycle()
+    val kelurahanName by viewModel.kelurahanName.collectAsStateWithLifecycle()
+    val availableYears by viewModel.availableYears.collectAsStateWithLifecycle()
+
     var currentDestination by remember { mutableStateOf<DrawerDestination>(DrawerDestination.Dashboard) }
 
     val topBarTitle = when (val dest = currentDestination) {
@@ -55,6 +60,7 @@ fun MainAppScreen(viewModel: MainViewModel) {
         drawerContent = {
             AppDrawerContent(
                 currentRoute = currentDestination.route,
+                kelurahanName = kelurahanName,
                 onSelectDestination = { destination ->
                     currentDestination = destination
                     if (destination is DrawerDestination.Month) {
@@ -71,6 +77,10 @@ fun MainAppScreen(viewModel: MainViewModel) {
             topBar = {
                 AppTopBar(
                     title = topBarTitle,
+                    kelurahanName = kelurahanName,
+                    selectedYear = selectedYear,
+                    availableYears = availableYears,
+                    onYearSelected = { viewModel.setSelectedYear(it) },
                     onMenuClick = {
                         coroutineScope.launch {
                             drawerState.open()
@@ -113,3 +123,4 @@ fun MainAppScreen(viewModel: MainViewModel) {
         }
     }
 }
+

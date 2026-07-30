@@ -1,6 +1,7 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
@@ -15,10 +16,14 @@ import kotlinx.coroutines.launch
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: AppRepository
+    private val prefs = application.getSharedPreferences("iuran_warga_prefs", Context.MODE_PRIVATE)
 
-    val selectedYear = MutableStateFlow(1446)
+    val selectedYear = MutableStateFlow(prefs.getInt("selected_year", 1446))
+    val kelurahanName = MutableStateFlow(prefs.getString("kelurahan_name", "Kelurahan Sukamaju") ?: "Kelurahan Sukamaju")
     val selectedMonthIndex = MutableStateFlow(1) // 1 = Muharram
     val searchQuery = MutableStateFlow("")
+
+    val availableYears = MutableStateFlow(listOf(1443, 1444, 1445, 1446, 1447, 1448, 1449, 1450))
 
     val allCitizens: StateFlow<List<Citizen>>
     val allPaymentRecords: StateFlow<List<PaymentRecord>>
@@ -63,6 +68,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Actions
+    fun setSelectedYear(year: Int) {
+        selectedYear.value = year
+        prefs.edit().putInt("selected_year", year).apply()
+        if (!availableYears.value.contains(year)) {
+            availableYears.value = (availableYears.value + year).sorted()
+        }
+    }
+
+    fun setKelurahanName(name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isNotBlank()) {
+            kelurahanName.value = trimmed
+            prefs.edit().putString("kelurahan_name", trimmed).apply()
+        }
+    }
+
     fun setSelectedMonth(index: Int) {
         selectedMonthIndex.value = index
     }
@@ -149,3 +170,4 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 }
+

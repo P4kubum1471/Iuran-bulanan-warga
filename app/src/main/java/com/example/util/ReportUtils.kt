@@ -12,10 +12,14 @@ object ReportUtils {
     fun generateCsvExport(
         citizens: List<Citizen>,
         paymentRecords: List<PaymentRecord>,
-        selectedYear: Int = 1446
+        selectedYear: Int = 1446,
+        kelurahanName: String = "Kelurahan Sukamaju"
     ): String {
         val sb = StringBuilder()
-        // Header
+        // Header Info
+        sb.append("# DATA IURAN WARGA HIJRIAH - $kelurahanName\n")
+        sb.append("# TAHUN: $selectedYear H\n\n")
+        
         sb.append("No,Nama Warga,Blok/No,No HP")
         HijriMonth.ALL_MONTHS.forEach { month ->
             sb.append(",${month.name}_Tagihan,${month.name}_Admin,${month.name}_Denda,${month.name}_KSU,${month.name}_Total")
@@ -43,11 +47,13 @@ object ReportUtils {
     fun generateMonthlyPrintText(
         monthName: String,
         year: Int,
-        items: List<CitizenPaymentItem>
+        items: List<CitizenPaymentItem>,
+        kelurahanName: String = "Kelurahan Sukamaju"
     ): String {
         val sb = StringBuilder()
         sb.append("====================================================\n")
         sb.append("      LAPORAN PENAGIHAN IURAN WARGA (HIJRIYAH)\n")
+        sb.append("                 $kelurahanName\n")
         sb.append("            BULAN: $monthName $year H\n")
         sb.append("====================================================\n\n")
 
@@ -61,6 +67,7 @@ object ReportUtils {
         val percentage = if (totalCitizens > 0) (paidCount.toDouble() / totalCitizens * 100).toInt() else 0
 
         sb.append("RINGKASAN:\n")
+        sb.append("- Wilayah Kelurahan  : $kelurahanName\n")
         sb.append("- Total Warga        : $totalCitizens orang\n")
         sb.append("- Warga Sudah Bayar  : $paidCount orang ($percentage%)\n")
         sb.append("- Total Tagihan      : ${CurrencyUtils.formatRupiah(totalTagihan)}\n")
@@ -90,11 +97,13 @@ object ReportUtils {
     fun generateYearlyPrintText(
         year: Int,
         citizens: List<Citizen>,
-        paymentRecords: List<PaymentRecord>
+        paymentRecords: List<PaymentRecord>,
+        kelurahanName: String = "Kelurahan Sukamaju"
     ): String {
         val sb = StringBuilder()
         sb.append("====================================================\n")
         sb.append("      LAPORAN TAHUNAN PENAGIHAN IURAN WARGA\n")
+        sb.append("                 $kelurahanName\n")
         sb.append("               TAHUN $year HIJRIYAH\n")
         sb.append("====================================================\n\n")
 
@@ -102,11 +111,12 @@ object ReportUtils {
         val totalTransactions = paymentRecords.filter { it.year == year && it.isPaid }.size
 
         sb.append("RINGKASAN TAHUNAN:\n")
+        sb.append("- Wilayah Kelurahan     : $kelurahanName\n")
         sb.append("- Total Warga Terdaftar : ${citizens.size} orang\n")
         sb.append("- Total Transaksi Bayar : $totalTransactions transaksi\n")
         sb.append("- Total Pemasukan Setahun: ${CurrencyUtils.formatRupiah(grandTotalYear)}\n\n")
 
-        sb.append("PERIKANAN TIAP BULAN HIJRIYAH:\n")
+        sb.append("REKAPITULASI TIAP BULAN HIJRIYAH:\n")
         sb.append("----------------------------------------------------\n")
         sb.append(String.format("%-15s | %-12s | %-16s\n", "Bulan Hijriyah", "Sudah Bayar", "Total Penerimaan"))
         sb.append("----------------------------------------------------\n")
@@ -134,3 +144,4 @@ object ReportUtils {
         context.startActivity(Intent.createChooser(shareIntent, title))
     }
 }
+

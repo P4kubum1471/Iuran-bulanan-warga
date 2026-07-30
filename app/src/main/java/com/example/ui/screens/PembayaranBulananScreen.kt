@@ -41,6 +41,7 @@ fun PembayaranBulananScreen(
     val context = LocalContext.current
     val selectedMonthIndex by viewModel.selectedMonthIndex.collectAsStateWithLifecycle()
     val selectedYear by viewModel.selectedYear.collectAsStateWithLifecycle()
+    val kelurahanName by viewModel.kelurahanName.collectAsStateWithLifecycle()
     val paymentItems by viewModel.currentMonthPaymentItems.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
 
@@ -240,7 +241,7 @@ fun PembayaranBulananScreen(
 
             IconButton(
                 onClick = {
-                    val printText = ReportUtils.generateMonthlyPrintText(currentMonthObj.name, selectedYear, paymentItems)
+                    val printText = ReportUtils.generateMonthlyPrintText(currentMonthObj.name, selectedYear, paymentItems, kelurahanName)
                     ReportUtils.shareText(context, "Laporan Iuran ${currentMonthObj.name} $selectedYear H", printText)
                 }
             ) {

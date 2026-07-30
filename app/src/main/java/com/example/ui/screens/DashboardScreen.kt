@@ -11,8 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,10 +40,15 @@ fun DashboardScreen(
     val citizens by viewModel.allCitizens.collectAsStateWithLifecycle()
     val paymentRecords by viewModel.allPaymentRecords.collectAsStateWithLifecycle()
     val currentYear by viewModel.selectedYear.collectAsStateWithLifecycle()
+    val kelurahanName by viewModel.kelurahanName.collectAsStateWithLifecycle()
+    val availableYears by viewModel.availableYears.collectAsStateWithLifecycle()
 
     val totalCitizens = citizens.size
     val totalYearlyIncome = paymentRecords.filter { it.year == currentYear }.sumOf { it.total }
     val totalPaidTransactions = paymentRecords.filter { it.year == currentYear && it.isPaid }.size
+
+    var showYearDialog by remember { mutableStateOf(false) }
+    var customYearInput by remember { mutableStateOf("") }
 
     Column(
         modifier = modifier
@@ -64,7 +68,7 @@ fun DashboardScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(130.dp)
+                    .height(140.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.img_hijri_banner),
@@ -77,27 +81,67 @@ fun DashboardScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "Ringkasan Tahun $currentYear Hijriyah",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            color = SecondaryTeal,
-                            fontWeight = FontWeight.Bold
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = kelurahanName,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = SecondaryTeal,
+                                fontWeight = FontWeight.Bold
+                            )
                         )
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = CurrencyUtils.formatRupiah(totalYearlyIncome),
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
+                        // Year Switcher Chip
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.White.copy(alpha = 0.2f),
+                            modifier = Modifier.clickable { showYearDialog = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarToday,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = "$currentYear H",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Ganti Tahun",
+                                    tint = SecondaryTeal,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Column {
+                        Text(
+                            text = CurrencyUtils.formatRupiah(totalYearlyIncome),
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
                         )
-                    )
-                    Text(
-                        text = "Total Seluruh Pemasukan Setahun",
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.8f))
-                    )
+                        Text(
+                            text = "Total Pemasukan Setahun ($currentYear H)",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.8f))
+                        )
+                    }
                 }
             }
         }
@@ -165,6 +209,68 @@ fun DashboardScreen(
                 )
             }
         }
+    }
+
+    if (showYearDialog) {
+        AlertDialog(
+            onDismissRequest = { showYearDialog = false },
+            title = { Text("Pilih / Ganti Tahun Hijriyah") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Pilih tahun Hijriyah yang ingin Anda kelola penagihannya:")
+
+                    availableYears.chunked(3).forEach { yearRow ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            yearRow.forEach { year ->
+                                FilterChip(
+                                    selected = (year == currentYear),
+                                    onClick = {
+                                        viewModel.setSelectedYear(year)
+                                        showYearDialog = false
+                                    },
+                                    label = { Text("$year H") },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = PrimaryNavy,
+                                        selectedLabelColor = Color.White
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    Text("Atau masukkan tahun baru:", style = MaterialTheme.typography.labelMedium)
+                    OutlinedTextField(
+                        value = customYearInput,
+                        onValueChange = { customYearInput = it.filter { char -> char.isDigit() } },
+                        label = { Text("Tahun Hijriyah (Misal: 1447)") },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val yearInt = customYearInput.toIntOrNull()
+                        if (yearInt != null && yearInt in 1300..1700) {
+                            viewModel.setSelectedYear(yearInt)
+                            showYearDialog = false
+                            customYearInput = ""
+                        }
+                    }
+                ) {
+                    Text("Terapkan Tahun")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showYearDialog = false }) {
+                    Text("Batal")
+                }
+            }
+        )
     }
 }
 

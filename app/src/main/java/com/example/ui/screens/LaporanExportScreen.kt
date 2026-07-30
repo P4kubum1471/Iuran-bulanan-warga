@@ -34,10 +34,13 @@ fun LaporanExportScreen(
     val selectedYear by viewModel.selectedYear.collectAsStateWithLifecycle()
     val selectedMonthIndex by viewModel.selectedMonthIndex.collectAsStateWithLifecycle()
     val paymentItems by viewModel.currentMonthPaymentItems.collectAsStateWithLifecycle()
+    val kelurahanName by viewModel.kelurahanName.collectAsStateWithLifecycle()
 
     val currentMonthObj = HijriMonth.getByIndex(selectedMonthIndex)
 
     var showResetDialog by remember { mutableStateOf(false) }
+    var showKelurahanDialog by remember { mutableStateOf(false) }
+    var kelurahanInput by remember { mutableStateOf(kelurahanName) }
     var showReportPreviewDialog by remember { mutableStateOf<Pair<String, String>?>(null) } // Title to Text
 
     Column(
@@ -56,14 +59,26 @@ fun LaporanExportScreen(
             )
         )
 
+        // Card 0: Setting Nama Kelurahan
+        OptionCard(
+            title = "Nama Kelurahan / Wilayah",
+            description = "Saat ini: \"$kelurahanName\". Nama ini dicantumkan pada header laporan dan cetakan penagihan iuran.",
+            icon = Icons.Default.LocationOn,
+            buttonText = "Ubah Nama Kelurahan",
+            onButtonClick = {
+                kelurahanInput = kelurahanName
+                showKelurahanDialog = true
+            }
+        )
+
         // Card 1: Export Data ke Excel / CSV
         OptionCard(
             title = "Export Data ke Excel (.csv)",
-            description = "Unduh seluruh data warga dan histori pembayaran 12 bulan Hijriyah ke dalam format spreadsheet Excel.",
+            description = "Unduh seluruh data warga dan histori pembayaran 12 bulan Hijriyah ($selectedYear H) ke dalam format spreadsheet Excel.",
             icon = Icons.Default.FileDownload,
             buttonText = "Export Excel (.csv)",
             onButtonClick = {
-                val csvContent = ReportUtils.generateCsvExport(citizens, paymentRecords, selectedYear)
+                val csvContent = ReportUtils.generateCsvExport(citizens, paymentRecords, selectedYear, kelurahanName)
                 ReportUtils.shareText(
                     context = context,
                     title = "Data_Iuran_Warga_Hijriah_$selectedYear.csv",
@@ -75,11 +90,11 @@ fun LaporanExportScreen(
         // Card 2: Cetak Laporan Bulanan
         OptionCard(
             title = "Cetak Laporan Bulanan",
-            description = "Buat laporan penagihan iuran resmi untuk Bulan ${currentMonthObj.name} $selectedYear H beserta statistik penerimaan.",
+            description = "Buat laporan penagihan iuran resmi untuk Bulan ${currentMonthObj.name} $selectedYear H ($kelurahanName) beserta statistik penerimaan.",
             icon = Icons.Default.Print,
             buttonText = "Lihat & Bagikan Laporan Bulanan",
             onButtonClick = {
-                val reportText = ReportUtils.generateMonthlyPrintText(currentMonthObj.name, selectedYear, paymentItems)
+                val reportText = ReportUtils.generateMonthlyPrintText(currentMonthObj.name, selectedYear, paymentItems, kelurahanName)
                 showReportPreviewDialog = Pair("Laporan Bulan ${currentMonthObj.name} $selectedYear H", reportText)
             }
         )
@@ -91,7 +106,7 @@ fun LaporanExportScreen(
             icon = Icons.Default.Assessment,
             buttonText = "Lihat & Bagikan Laporan Tahunan",
             onButtonClick = {
-                val reportText = ReportUtils.generateYearlyPrintText(selectedYear, citizens, paymentRecords)
+                val reportText = ReportUtils.generateYearlyPrintText(selectedYear, citizens, paymentRecords, kelurahanName)
                 showReportPreviewDialog = Pair("Laporan Tahunan $selectedYear H", reportText)
             }
         )
@@ -194,6 +209,45 @@ fun LaporanExportScreen(
             dismissButton = {
                 TextButton(onClick = { showReportPreviewDialog = null }) {
                     Text("Tutup")
+                }
+            }
+        )
+    }
+
+    // Dialog Edit Kelurahan Name
+    if (showKelurahanDialog) {
+        AlertDialog(
+            onDismissRequest = { showKelurahanDialog = false },
+            title = { Text("Ubah Nama Kelurahan") },
+            text = {
+                Column {
+                    Text("Masukkan nama kelurahan / wilayah administrasi tanpa mencantumkan RT/RW:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = kelurahanInput,
+                        onValueChange = { kelurahanInput = it },
+                        label = { Text("Nama Kelurahan") },
+                        placeholder = { Text("Contoh: Kelurahan Sukamaju") },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (kelurahanInput.isNotBlank()) {
+                            viewModel.setKelurahanName(kelurahanInput)
+                            showKelurahanDialog = false
+                            Toast.makeText(context, "Nama kelurahan diperbarui", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) {
+                    Text("Simpan")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showKelurahanDialog = false }) {
+                    Text("Batal")
                 }
             }
         )
